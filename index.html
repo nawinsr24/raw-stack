@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Category and Image Upload with Stacking</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .half-screen {
+            width: 50%;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        .half-screen:first-child {
+            overflow-y: auto;
+        }
+        .category {
+            margin-bottom: 20px;
+        }
+        .category h3 {
+            margin-bottom: 10px;
+        }
+        .images img {
+            width: 100px;
+            height: 100px;
+            margin: 5px;
+            object-fit: cover;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .images img.selected {
+            border-color: blue;
+        }
+        .stacked-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            background-color: #f0f0f0;
+        }
+        .stacked-container img {
+            width: 300px;
+            height: 300px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="half-screen">
+        <h2>Upload Images</h2>
+        <label for="categoryName">Category Name:</label>
+        <input type="text" id="categoryName" placeholder="Enter category name">
+        <br><br>
+        <label for="imageUpload">Upload Images:</label>
+        <input type="file" id="imageUpload" multiple accept="image/*">
+        <br><br>
+        <button onclick="submitCategory()">Submit</button>
+        <hr>
+        <div id="categoriesContainer"></div>
+    </div>
+
+    <div class="half-screen">
+        <h2>Stack Images</h2>
+        <div id="stackedImagesContainer" class="stacked-container"></div>
+    </div>
+
+    <script>
+        let selectedImages = {}; // Store selected images by category
+
+        function submitCategory() {
+            const categoryName = document.getElementById('categoryName').value;
+            const imageUpload = document.getElementById('imageUpload');
+            const categoriesContainer = document.getElementById('categoriesContainer');
+
+            if (categoryName === '') {
+                alert('Please enter a category name.');
+                return;
+            }
+
+            if (imageUpload.files.length === 0) {
+                alert('Please upload at least one image.');
+                return;
+            }
+
+            const categoryDiv = document.createElement('div');
+            categoryDiv.classList.add('category');
+
+            const categoryTitle = document.createElement('h3');
+            categoryTitle.textContent = categoryName;
+
+            const imagesDiv = document.createElement('div');
+            imagesDiv.classList.add('images');
+
+            for (const file of imageUpload.files) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.onclick = function() {
+                        selectImage(img, categoryName);
+                    };
+                    imagesDiv.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            }
+
+            categoryDiv.appendChild(categoryTitle);
+            categoryDiv.appendChild(imagesDiv);
+            categoriesContainer.appendChild(categoryDiv);
+
+            document.getElementById('categoryName').value = '';
+            imageUpload.value = '';
+        }
+
+        function selectImage(img, categoryName) {
+            const imagesDiv = img.parentElement;
+            const previousSelected = imagesDiv.querySelector('.selected');
+
+            // Deselect previous image in this category
+            if (previousSelected && previousSelected !== img) {
+                previousSelected.classList.remove('selected');
+                removeStackedImage(categoryName);
+            }
+
+            // Select new image
+            img.classList.add('selected');
+            selectedImages[categoryName] = img.src;
+            addStackedImage(img.src, categoryName);
+        }
+
+        function addStackedImage(src, categoryName) {
+            const stackedImagesContainer = document.getElementById('stackedImagesContainer');
+
+            const stackedImg = document.createElement('img');
+            stackedImg.src = src;
+            stackedImg.dataset.category = categoryName;
+
+            removeStackedImage(categoryName); // Remove previous image from this category
+            stackedImagesContainer.appendChild(stackedImg);
+        }
+
+        function removeStackedImage(categoryName) {
+            const stackedImagesContainer = document.getElementById('stackedImagesContainer');
+            const imgToRemove = stackedImagesContainer.querySelector(`img[data-category="${categoryName}"]`);
+            if (imgToRemove) {
+                stackedImagesContainer.removeChild(imgToRemove);
+            }
+        }
+    </script>
+
+</body>
+</html>
